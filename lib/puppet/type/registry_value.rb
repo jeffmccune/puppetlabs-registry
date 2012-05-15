@@ -109,7 +109,7 @@ value but may be specified as a Puppet array when the type is set to 'array'.
       end
 
       matching_resource_keys = catalog.resource_keys.collect do |rsrc_type, rsrc_id|
-        rsrc_id if rsrc_type == desired_type and rsrc_id =~ /^#{parent_keypath.to_s}$/i
+        rsrc_id if (rsrc_type == desired_type) && (rsrc_id =~ /^#{parent_keypath.to_s}$/i)
       end.compact
       matching_resource_keys.each do |rsrc_type, rsrc_id|
         req << rsrc_id
