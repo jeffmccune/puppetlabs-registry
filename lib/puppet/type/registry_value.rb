@@ -97,9 +97,23 @@ value but may be specified as a Puppet array when the type is set to 'array'.
   autorequire(:registry_key) do
     req = []
     path = Puppet::Modules::Registry::RegistryKeyPath.new(value(:path))
-    if found = path.enum_for(:ascend).find { |p| catalog.resource(:registry_key, p.to_s) }
-      req << found.to_s
+    # Ascend up the subkey components of this registry path.
+    path.enum_for(:ascend).find do |parent_keypath|
+      # Search through the resources in the catalog in a case-insensitive way.
+      # (Note, all keys are represented here.  If a resource has a different
+      # namevar and title both will be elements in catalog.resource_keys.)
+      desired_type = "Registry_key"
+      matching_resource_keys = catalog.resource_keys.collect do |rsrc_type, rsrc_id|
+        rsrc_id if rsrc_type == desired_type and rsrc_id =~ /^#{parent_keypath.to_s}$/i
+      end.flatten
+      matching_resource_keys.each do |rsrc_type, rsrc_id|
+        req << rsrc_id
+      end
+      Puppet.notice "DEBUG: #{self} - #{parent_keypath} => #{matching_resource_keys.inspect}"
+      # Stop ascending the registry paths if we found any resources
+      not matching_resource_keys.empty?
     end
+    # Return the list of keys we require
     req
   end
 end
